@@ -10,7 +10,7 @@
 
 	<groupId>net.trackmate</groupId>
 	<artifactId>trackmate</artifactId>
-	<version>1.0.0-beta-12-SNAPSHOT</version>
+	<version>1.0.0-beta-14-SNAPSHOT</version>
 
 	<name>TrackMate3</name>
 	<description>This is the prototype code for the 3rd version of TrackMate, planned for mid 2017.</description>
@@ -31,12 +31,12 @@
 		<dependency>
 			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon-collection</artifactId>
-			<version>1.0.0-beta-16</version>
+			<version>1.0.0-beta-17</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon-graph</artifactId>
-			<version>1.0.0-beta-15</version>
+			<version>1.0.0-beta-16</version>
 		</dependency>
 		<dependency>
 			<groupId>sc.fiji</groupId>

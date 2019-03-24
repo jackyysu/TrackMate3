@@ -48,6 +48,7 @@ public class AbstractModelGraph<
 	public AbstractModelGraph( final EP edgePool )
 	{
 		super( edgePool );
+		vertexPool.linkModelGraph( ( G ) this );
 		idmap = new GraphIdBimap<>( vertexPool, edgePool );
 		vertexPropertySerializers = new PropertyMapSerializers<>();
 		lock = new ReentrantReadWriteLock();
@@ -144,11 +145,15 @@ public class AbstractModelGraph<
 	protected void pauseListeners()
 	{
 		super.pauseListeners();
+		vertexPool.getPropertyMaps().pauseListeners();
+		edgePool.getPropertyMaps().pauseListeners();
 	}
 
 	@Override
 	protected void resumeListeners()
 	{
+		edgePool.getPropertyMaps().resumeListeners();
+		vertexPool.getPropertyMaps().resumeListeners();
 		super.resumeListeners();
 	}
 
