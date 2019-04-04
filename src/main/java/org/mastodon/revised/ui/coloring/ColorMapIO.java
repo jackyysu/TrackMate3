@@ -1,10 +1,10 @@
 package org.mastodon.revised.ui.coloring;
 
+import static org.yaml.snakeyaml.DumperOptions.FlowStyle.FLOW;
+
 import java.awt.Color;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -26,8 +26,6 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.SequenceNode;
 import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Representer;
-
-import static org.yaml.snakeyaml.DumperOptions.FlowStyle.FLOW;
 
 /**
  * Serialization / Deserialization of {@link ColorMap}.
@@ -219,15 +217,14 @@ public class ColorMapIO
 		return yaml;
 	}
 
-	static ColorMap importLUT( final String filename )
+	static ColorMap importLUT( final Path path ) throws IOException
 	{
-		final Path path = Paths.get( filename );
+		String name = path.getFileName().toString();
+		name = name.substring( 0, name.indexOf( '.' ) ).toLowerCase();
 		try (final Scanner scanner = new Scanner( path ))
 		{
-			String name = path.getFileName().toString();
-			name = name.substring( 0, name.indexOf( '.' ) ).toLowerCase();
 
-			final IntArray colors = new IntArray();
+			final IntArray intColors = new IntArray();
 			final IntArray intAlphas = new IntArray();
 			final int naColor = Color.BLACK.getRGB();
 			final AtomicInteger nLines = new AtomicInteger( 0 );
@@ -241,26 +238,20 @@ public class ColorMapIO
 				}
 				intAlphas.addValue( scanner.nextInt() );
 				final int rgba = new Color( scanner.nextInt(), scanner.nextInt(), scanner.nextInt() ).getRGB();
-				colors.addValue( rgba );
+				intColors.addValue( rgba );
 				nLines.incrementAndGet();
 			}
 
 			if ( nLines.get() < 2 )
 				return null;
 			final double[] alphas = new double[ intAlphas.size() ];
+			final int[] colors = new int[ alphas.length ];
 			for ( int i = 0; i < alphas.length; i++ )
+			{
 				alphas[ i ] = ( double ) intAlphas.get( i ) / ( nLines.get() - 1 );
-			return new ColorMap( name, colors.getArray(), alphas, naColor );
-		}
-		catch ( final FileNotFoundException e )
-		{
-			e.printStackTrace();
-			return null;
-		}
-		catch ( final IOException e )
-		{
-			e.printStackTrace();
-			return null;
+				colors[ i ] = intColors.getValue( i );
+			}
+			return new ColorMap( name, colors, alphas, naColor );
 		}
 	}
 }

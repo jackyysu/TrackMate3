@@ -17,8 +17,8 @@
 	<url>https://github.com/fiji/TrackMate3</url>
 	<inceptionYear>2014</inceptionYear>
 	<organization>
-		<name>fiji</name>
-		<url>http://github.com/fiji</url>
+		<name>Fiji</name>
+		<url>https://fiji.sc</url>
 	</organization>
 	<licenses>
 		<license>
@@ -69,8 +69,8 @@
 
 	<mailingLists>
 		<mailingList>
-			<name>ImageJ Forum</name>
-			<archive>http://forum.imagej.net/</archive>
+			<name>Image.sc Forum</name>
+			<archive>https://forum.image.sc/tags/fiji</archive>
 		</mailingList>
 	</mailingLists>
 
@@ -119,7 +119,7 @@
 			<id>tpietzsch</id>
 			<name>Tobias Pietzsch</name>
 			<email>pietzsch@mpi-cbg.de</email>
-			<url>http://imagej.net/User:Pietzsch</url>
+			<url>https://imagej.net/User:Pietzsch</url>
 			<organization>MPI-CBG</organization>
 			<organizationUrl>http://www.mpi-cbg.de/</organizationUrl>
 			<roles>
@@ -134,7 +134,7 @@
 	<repositories>
 		<repository>
 			<id>imagej.public</id>
-			<url>http://maven.imagej.net/content/groups/public</url>
+			<url>https://maven.imagej.net/content/groups/public</url>
 		</repository>
 	</repositories>
 </project>
