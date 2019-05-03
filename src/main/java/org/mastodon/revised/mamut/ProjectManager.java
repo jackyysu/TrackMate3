@@ -1,16 +1,36 @@
 package org.mastodon.revised.mamut;
 
 import java.awt.Component;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.util.Collection;
 
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import org.mastodon.collection.RefCollection;
+import org.mastodon.feature.Feature;
+import org.mastodon.feature.FeatureModel;
+import org.mastodon.feature.FeatureSpec;
+import org.mastodon.feature.io.FeatureSerializationService;
+import org.mastodon.feature.io.FeatureSerializer;
+import org.mastodon.graph.io.RawGraphIO.FileIdToGraphMap;
+import org.mastodon.graph.io.RawGraphIO.GraphToFileIdMap;
+import org.mastodon.io.FileIdToObjectMap;
+import org.mastodon.io.ObjectToFileIdMap;
 import org.mastodon.plugin.MastodonPlugins;
 import org.mastodon.project.MamutProject;
+import org.mastodon.project.MamutProject.ProjectReader;
+import org.mastodon.project.MamutProject.ProjectWriter;
 import org.mastodon.project.MamutProjectIO;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.overlay.ui.RenderSettingsManager;
+import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
+import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.revised.model.mamut.trackmate.MamutExporter;
 import org.mastodon.revised.model.mamut.trackmate.TrackMateImporter;
 import org.mastodon.revised.trackscheme.display.style.TrackSchemeStyleManager;
@@ -33,6 +53,7 @@ import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.viewer.ViewerOptions;
 import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 
 public class ProjectManager
 {
@@ -237,9 +258,44 @@ public class ProjectManager
 		{
 			new MamutProjectIO().save( project, writer );
 			final Model model = windowManager.getAppModel().getModel();
-			model.saveRaw( writer );
+			final GraphToFileIdMap< Spot, Link > idmap = model.saveRaw( writer );
+
+			/*
+			 * Serialize features.
+			 */
+
+			final FeatureSerializationService featureSerializationService = windowManager.getContext().getService( FeatureSerializationService.class );
+			for ( final FeatureSpec< ?, ? > spec : model.getFeatureModel().getFeatureSpecs() )
+			{
+				final Feature< ? > rawFeature = model.getFeatureModel().getFeature( spec );
+				final FeatureSerializer< ?, ? > rawSerializer = featureSerializationService.serializerFor( rawFeature );
+				if ( null == rawSerializer )
+					continue;
+
+				final Class< ? > specTargetClass = spec.getTargetClass();
+				if ( specTargetClass == Spot.class )
+					write( rawFeature, rawSerializer, idmap.vertices(), writer );
+				else if ( specTargetClass == Link.class )
+					write( rawFeature, rawSerializer, idmap.edges(), writer );
+				else
+					System.err.println( "Do not know how to serialize a feature that targets " + specTargetClass );
+			}
 		}
 		updateEnabledActions();
+	}
+
+	@SuppressWarnings( { "unchecked", "rawtypes" } )
+	private void write( final Feature< ? > rawFeature, final FeatureSerializer< ?, ? > rawSerializer, final ObjectToFileIdMap< ? > idmap, final ProjectWriter writer ) throws IOException
+	{
+		final Feature feature = rawFeature;
+		final FeatureSerializer serializer = rawSerializer;
+
+		try (
+				final OutputStream fos = writer.getFeatureOutputStream( rawFeature.getSpec().getKey() );
+				final ObjectOutputStream oos = new ObjectOutputStream( new BufferedOutputStream( fos, 1024 * 1024 ) ))
+		{
+			serializer.serialize( feature, idmap, oos );
+		}
 	}
 
 	/**
@@ -289,11 +345,48 @@ public class ProjectManager
 		final boolean isNewProject = project.getProjectRoot() == null;
 		if ( !isNewProject )
 		{
-			try ( final MamutProject.ProjectReader reader = project.openForReading() )
+			try (final MamutProject.ProjectReader reader = project.openForReading())
 			{
-				model.loadRaw( reader );
+				final FileIdToGraphMap< Spot, Link > idmap = model.loadRaw( reader );
+
+				/*
+				 * Load features.
+				 */
+				final FeatureSerializationService featureSerializationService = windowManager.getContext().getService( FeatureSerializationService.class );
+				final Collection< String > featureKeys = reader.getFeatureKeys();
+				final FeatureModel featureModel = model.getFeatureModel();
+				featureModel.pauseListeners();
+				featureModel.clear();
+				for ( final String featureKey : featureKeys )
+				{
+					@SuppressWarnings( "rawtypes" )
+					final FeatureSerializer serializer = featureSerializationService.serializerFor( featureKey );
+					final Class< ? > targetClass = serializer.getTargetClass();
+					@SuppressWarnings( "rawtypes" )
+					Feature feature;
+					if ( targetClass == Spot.class )
+						feature = read( serializer, idmap.vertices(), model.getGraph().vertices(), model.getSpaceUnits(), model.getTimeUnits(), reader );
+					else if ( targetClass == Link.class )
+						feature = read( serializer, idmap.edges(), model.getGraph().edges(), model.getSpaceUnits(), model.getTimeUnits(), reader );
+					else
+					{
+						System.err.println( "Do not know how to deserialize a feature that targets " + targetClass );
+						continue;
+					}
+					featureModel.declareFeature( feature );
+				}
+				featureModel.resumeListeners();
+
+			}
+			catch ( final ClassNotFoundException e )
+			{
+				e.printStackTrace();
 			}
 		}
+
+		/*
+		 * Reset window manager.
+		 */
 
 		final KeyPressedManager keyPressedManager = windowManager.getKeyPressedManager();
 		final TrackSchemeStyleManager trackSchemeStyleManager = windowManager.getTrackSchemeStyleManager();
@@ -323,6 +416,18 @@ public class ProjectManager
 		windowManager.setAppModel( appModel );
 		this.project = project;
 		updateEnabledActions();
+	}
+
+	@SuppressWarnings( { "unchecked", "rawtypes" } )
+	private Feature read( final FeatureSerializer< ?, ? > rawSerializer, final FileIdToObjectMap< ? > idmap, final RefCollection< ? > pool, final String spaceUnits, final String timeUnits, final ProjectReader reader ) throws IOException, ClassNotFoundException
+	{
+		final FeatureSerializer serializer = rawSerializer;
+		try (
+				final InputStream fis = reader.getFeatureInputStream( serializer.getFeatureKey() );
+				final ObjectInputStream ois = new ObjectInputStream( new BufferedInputStream( fis, 1024 * 1024 ) ))
+		{
+			return serializer.deserialize( idmap, pool, spaceUnits, timeUnits, ois );
+		}
 	}
 
 	public synchronized void importTgmm()
