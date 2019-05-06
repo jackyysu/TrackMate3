@@ -7,6 +7,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.Collections;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -317,6 +319,8 @@ public class DummyBdvPanel extends JPanel
 
 		private static final String RAW_TAGS_FILE_NAME = "/tags.raw";
 
+		private static final String FEATURE_FOLDER_NAME = "/features";
+
 		private final String resourceName;
 
 		public MyProjectReader( final String resourceName )
@@ -345,6 +349,17 @@ public class DummyBdvPanel extends JPanel
 		{
 			return DummyBdvPanel.class.getResourceAsStream( resourceName + RAW_TAGS_FILE_NAME );
 		}
-	}
 
+		@Override
+		public InputStream getFeatureInputStream( final String featureKey ) throws IOException
+		{
+			return DummyBdvPanel.class.getResourceAsStream( FEATURE_FOLDER_NAME + "/" + featureKey + ".raw" );
+		}
+
+		@Override
+		public Collection< String > getFeatureKeys()
+		{
+			return Collections.emptyList();
+		}
+	}
 }
