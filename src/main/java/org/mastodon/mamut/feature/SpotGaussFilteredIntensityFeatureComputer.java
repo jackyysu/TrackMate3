@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.IntFunction;
 
@@ -64,9 +65,17 @@ public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureCo
 	public void createOutput()
 	{
 		if ( null == output )
-			output = new SpotGaussFilteredIntensityFeature(
-					bdvData.getSources().size(),
-					model.getGraph().vertices().getRefPool() );
+		{
+			final int nSources = bdvData.getSources().size();
+			final List< DoublePropertyMap< Spot > > means = new ArrayList<>(nSources);
+			final List< DoublePropertyMap< Spot > > stds = new ArrayList<>(nSources);
+			for ( int i = 0; i < nSources; i++ )
+			{
+				means.add( new DoublePropertyMap<>( model.getGraph().vertices().getRefPool(), Double.NaN ) );
+				stds.add( new DoublePropertyMap<>( model.getGraph().vertices().getRefPool(), Double.NaN ) );
+			}
+			output = new SpotGaussFilteredIntensityFeature( means, stds );
+		}
 	}
 
 	@Override
