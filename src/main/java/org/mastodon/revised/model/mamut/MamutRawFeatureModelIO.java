@@ -69,6 +69,12 @@ public class MamutRawFeatureModelIO
 		{
 			@SuppressWarnings( "rawtypes" )
 			final FeatureSerializer serializer = featureSerializationService.serializerFor( featureKey );
+			if ( null == serializer)
+			{
+				System.err.println( "Do not know how to deserialize the feature with key: " + featureKey );
+				continue;
+			}
+
 			final Class< ? > targetClass = serializer.getTargetClass();
 			@SuppressWarnings( "rawtypes" )
 			Feature feature;
