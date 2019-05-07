@@ -52,18 +52,26 @@ public class GraphUpdateStack< V extends Vertex< E >, E extends Edge< V > >
 
 	public GraphUpdateStack( final ReadOnlyGraph< V, E > graph )
 	{
-		this.graph = graph;
-		this.stateStack = new SizedDeque<>( BUFFER_SIZE );
-
-		this.vertexPropertyChangeListener = new MyVertexPropertyChangeListener();
-		this.edgePropertyChangeListener = new MyEdgePropertyChangeListener();
-		this.graphListener = new MyGraphListener();
+		this( graph, new SizedDeque<>( BUFFER_SIZE ), new GraphUpdate<>( graph ) );
 		commit( Collections.emptyList() );
 	}
 
 	/**
-	 * This method should only be called by the {@link DefaultFeatureComputerService}
-	 * after the computation step.
+	 * For deserialization only.
+	 */
+	GraphUpdateStack( final ReadOnlyGraph< V, E > graph, final SizedDeque< UpdateState< V, E > > stateStack, final GraphUpdate< V, E > currentUpdate )
+	{
+		this.graph = graph;
+		this.stateStack = stateStack;
+		this.currentUpdate = currentUpdate;
+		this.vertexPropertyChangeListener = new MyVertexPropertyChangeListener();
+		this.edgePropertyChangeListener = new MyEdgePropertyChangeListener();
+		this.graphListener = new MyGraphListener();
+	}
+
+	/**
+	 * This method should only be called by the
+	 * {@link DefaultFeatureComputerService} after the computation step.
 	 * <p>
 	 * It stacks the current changes and mark them for the specified feature
 	 * keys, then starts building a new one.
@@ -195,6 +203,27 @@ public class GraphUpdateStack< V extends Vertex< E >, E extends Edge< V > >
 			currentUpdate.add( e );
 			currentUpdate.addAsNeighbor( e.getSource( vref ) );
 			currentUpdate.addAsNeighbor( e.getTarget( vref ) );
+		}
+	}
+
+	static class SerialisationAccess< V extends Vertex< E >, E extends Edge< V > >
+	{
+
+		private final GraphUpdateStack< V, E > graphUpdateStack;
+
+		SerialisationAccess(final GraphUpdateStack< V, E > graphUpdateStack)
+		{
+			this.graphUpdateStack = graphUpdateStack;
+		}
+
+		SizedDeque< UpdateState< V, E > > getStateStack()
+		{
+			return graphUpdateStack.stateStack;
+		}
+
+		GraphUpdate< V, E > getCurrentUpate()
+		{
+			return graphUpdateStack.currentUpdate;
 		}
 	}
 }

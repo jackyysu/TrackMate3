@@ -45,4 +45,9 @@ class UpdateState< V extends Vertex< E >, E extends Edge< V > >
 	{
 		return changes;
 	}
+
+	Collection< FeatureSpec< ?, ? > > getFeatureKeys()
+	{
+		return featureKeys;
+	}
 }

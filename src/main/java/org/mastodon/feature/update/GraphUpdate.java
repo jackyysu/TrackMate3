@@ -12,7 +12,7 @@ import org.mastodon.graph.Vertex;
  * For the first two methods, a flag specifies whether they return the objects
  * that were modified or added themselves ({@link UpdateLocality#SELF}) or the
  * direct neighbors of these objects ({@link UpdateLocality#NEIGHBOR}).
- * 
+ *
  * @param <V>
  *            the type of vertices in the graph.
  * @param <E>
@@ -45,10 +45,27 @@ public class GraphUpdate< V extends Vertex< E >, E extends Edge< V > >
 
 	public GraphUpdate( final ReadOnlyGraph< V, E > graph )
 	{
-		this.modifiedVerticesSelf = RefCollections.createRefSet( graph.vertices() );
-		this.modifiedEdgesSelf = RefCollections.createRefSet( graph.edges() );
-		this.modifiedVerticesNeighbor = RefCollections.createRefSet( graph.vertices() );
-		this.modifiedEdgesNeighbor = RefCollections.createRefSet( graph.edges() );
+		this(
+				RefCollections.createRefSet( graph.vertices() ),
+				RefCollections.createRefSet( graph.edges() ),
+				RefCollections.createRefSet( graph.vertices() ),
+				RefCollections.createRefSet( graph.edges() ) );
+
+	}
+
+	/**
+	 * For deserialization only.
+	 */
+	GraphUpdate(
+			final RefSet< V > modifiedVerticesSelf,
+			final RefSet< E > modifiedEdgesSelf,
+			final RefSet< V > modifiedVerticesNeighbor,
+			final RefSet< E > modifiedEdgesNeighbor )
+	{
+		this.modifiedVerticesSelf = modifiedVerticesSelf;
+		this.modifiedEdgesSelf = modifiedEdgesSelf;
+		this.modifiedVerticesNeighbor = modifiedVerticesNeighbor;
+		this.modifiedEdgesNeighbor = modifiedEdgesNeighbor;
 	}
 
 	void add( final V vertex )
