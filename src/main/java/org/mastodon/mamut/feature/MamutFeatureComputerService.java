@@ -116,4 +116,14 @@ public class MamutFeatureComputerService extends DefaultFeatureComputerService
 		spotPool.covarianceProperty().addPropertyChangeListener( graphUpdate.vertexPropertyChangeListener() );
 		spotPool.positionProperty().addPropertyChangeListener( graphUpdate.vertexPropertyChangeListener() );
 	}
+
+	public GraphUpdateStack< Spot, Link > getGraphUpdateStack()
+	{
+		return graphUpdate;
+	}
+
+	public void setGraphUpdateStack( final GraphUpdateStack< Spot, Link > graphUpdateStack )
+	{
+		this.graphUpdate = graphUpdateStack;
+	}
 }
