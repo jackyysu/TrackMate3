@@ -12,6 +12,7 @@ import java.util.function.IntFunction;
 import org.mastodon.RefPool;
 import org.mastodon.collection.ref.RefArrayList;
 import org.mastodon.feature.DefaultFeatureComputerService.FeatureComputationStatus;
+import org.mastodon.feature.Feature;
 import org.mastodon.feature.update.GraphUpdate;
 import org.mastodon.feature.update.GraphUpdate.UpdateLocality;
 import org.mastodon.feature.update.GraphUpdateStack;
@@ -66,6 +67,15 @@ public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureCo
 	{
 		if ( null == output )
 		{
+			//  Try to get it from the FeatureModel, if we deserialized a model.
+			final Feature< ? > feature = model.getFeatureModel().getFeature( SpotGaussFilteredIntensityFeature.SPEC );
+			if (null != feature )
+			{
+				output = ( SpotGaussFilteredIntensityFeature ) feature;
+				return;
+			}
+
+			// Create a new one.
 			final int nSources = bdvData.getSources().size();
 			final List< DoublePropertyMap< Spot > > means = new ArrayList<>(nSources);
 			final List< DoublePropertyMap< Spot > > stds = new ArrayList<>(nSources);
@@ -90,7 +100,6 @@ public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureCo
 		// Spots to process, per time-point.
 		final IntFunction< Iterable< Spot > > index;
 		final GraphUpdate< Spot, Link > changes = update.changesFor( SpotGaussFilteredIntensityFeature.SPEC );
-
 		if (null == changes)
 		{
 			// Redo all.
