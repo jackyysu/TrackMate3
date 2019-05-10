@@ -465,7 +465,7 @@ public class GraphUpdateStackTest
 		}
 	}
 
-	private static abstract class TestFeatureComputer implements MamutFeatureComputer
+	static abstract class TestFeatureComputer implements MamutFeatureComputer
 	{
 		@Parameter
 		protected SpotUpdateStack spotUpdateStack;
@@ -511,7 +511,7 @@ public class GraphUpdateStackTest
 		protected abstract TestFeature< Spot > getOutput();
 	}
 
-	private static abstract class TestFeature< O > implements Feature< O >
+	static abstract class TestFeature< O > implements Feature< O >
 	{
 		protected RefSet< Spot > expectedVerticesSelf = null;
 
