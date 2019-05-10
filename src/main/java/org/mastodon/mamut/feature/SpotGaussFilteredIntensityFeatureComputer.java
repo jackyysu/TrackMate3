@@ -27,11 +27,14 @@ import org.scijava.plugin.Plugin;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
-import net.imglib2.RandomAccess;
+import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
 
 @Plugin( type = SpotGaussFilteredIntensityFeatureComputer.class )
 public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureComputer, Cancelable
@@ -159,7 +162,6 @@ public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureCo
 
 				@SuppressWarnings( "unchecked" )
 				final RandomAccessibleInterval< RealType< ? > > rai = ( RandomAccessibleInterval< RealType< ? > > ) source.getSource( timepoint, level );
-				final RandomAccess< RealType< ? > > ra = rai.randomAccess( rai );
 
 				for ( final Spot spot : index.apply( timepoint ) )
 				{
@@ -188,6 +190,7 @@ public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureCo
 					final long maxY = Math.min( rai.max( 1 ), p[ 1 ] + halfkernelsizes[ 1 ] - 1 );
 					final long minZ = Math.max( rai.min( 2 ), p[ 2 ] - halfkernelsizes[ 2 ] + 1 );
 					final long maxZ = Math.min( rai.max( 2 ), p[ 2 ] + halfkernelsizes[ 2 ] - 1 );
+					final FinalInterval interval = Intervals.createMinMax( minX, minY, minZ, maxX, maxY, maxZ );
 
 					/*
 					 * Compute running mean & std.
@@ -198,31 +201,20 @@ public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureCo
 					double weightedMean = 0.;
 					double weightedSum = 0.;
 					double S = 0.;
-
-					for ( long z = minZ; z <= maxZ; z++ )
+					final Cursor< RealType< ? > > cursor = Views.interval( rai, interval ).localizingCursor();
+					while(cursor.hasNext())
 					{
-						ra.setPosition( z, 2 );
-						final int iz = ( int ) ( z - minZ );
-						final double wz = kernels[ 2 ][ iz ];
-						for ( long y = minY; y <= maxY; y++ )
-						{
-							ra.setPosition( y, 1 );
-							final int iy = ( int ) ( y - minY );
-							final double wy = kernels[ 1 ][ iy ];
-							for ( long x = minX; x <= maxX; x++ )
-							{
-								ra.setPosition( x, 0 );
-								final int ix = ( int ) ( x - minX );
-								final double wx = kernels[ 0 ][ ix ];
-								final double val = ra.get().getRealDouble();
-								final double weight = wx * wy * wz;
+						cursor.fwd();
+						final double wx = kernels[0][ cursor.getIntPosition( 0 ) -  ( int )  interval.min( 0 )  ];
+						final double wy = kernels[1][ cursor.getIntPosition( 1 ) -  ( int )  interval.min( 1 )  ];
+						final double wz = kernels[2][ cursor.getIntPosition( 2 ) -  ( int )  interval.min( 2 )  ];
+						final double weight = wx * wy * wz;
+						final double val = cursor.get().getRealDouble();
 
-								weightedSum += weight;
-								final double oldWeightedMean = weightedMean;
-								weightedMean = oldWeightedMean + ( weight / weightedSum ) * ( val - oldWeightedMean );
-								S = S + weight * ( val - oldWeightedMean ) * ( val - weightedMean );
-							}
-						}
+						weightedSum += weight;
+						final double oldWeightedMean = weightedMean;
+						weightedMean = oldWeightedMean + ( weight / weightedSum ) * ( val - oldWeightedMean );
+						S = S + weight * ( val - oldWeightedMean ) * ( val - weightedMean );
 					}
 
 					final double variance = S / weightedSum;
