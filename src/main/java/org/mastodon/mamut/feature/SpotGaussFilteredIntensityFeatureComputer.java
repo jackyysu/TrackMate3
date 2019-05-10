@@ -13,13 +13,10 @@ import org.mastodon.RefPool;
 import org.mastodon.collection.ref.RefArrayList;
 import org.mastodon.feature.DefaultFeatureComputerService.FeatureComputationStatus;
 import org.mastodon.feature.Feature;
-import org.mastodon.feature.update.GraphUpdate;
-import org.mastodon.feature.update.GraphUpdate.UpdateLocality;
-import org.mastodon.feature.update.GraphUpdateStack;
+import org.mastodon.feature.update.Update;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.overlay.util.JamaEigenvalueDecomposition;
-import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.Spot;
 import org.scijava.Cancelable;
@@ -50,7 +47,7 @@ public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureCo
 	private Model model;
 
 	@Parameter
-	private GraphUpdateStack< Spot, Link > update;
+	private SpotUpdateStack update;
 
 	@Parameter
 	private FeatureComputationStatus status;
@@ -99,7 +96,7 @@ public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureCo
 
 		// Spots to process, per time-point.
 		final IntFunction< Iterable< Spot > > index;
-		final GraphUpdate< Spot, Link > changes = update.changesFor( SpotGaussFilteredIntensityFeature.SPEC );
+		final Update< Spot > changes = update.changesFor( SpotGaussFilteredIntensityFeature.SPEC );
 		if (null == changes)
 		{
 			// Redo all.
@@ -253,10 +250,10 @@ public class SpotGaussFilteredIntensityFeatureComputer implements MamutFeatureCo
 
 		private final Map< Integer, Collection< Spot > > index;
 
-		public MyIndex( final GraphUpdate< Spot, Link > update, final RefPool< Spot > pool )
+		public MyIndex( final Update< Spot > update, final RefPool< Spot > pool )
 		{
 			this.index = new HashMap<>();
-			for ( final Spot spot : update.vertices( UpdateLocality.SELF ) )
+			for ( final Spot spot : update.get() )
 			{
 				final int timepoint = spot.getTimepoint();
 				index

@@ -289,7 +289,28 @@ public class ProjectManager
 			project.setTimeUnits( "frame" );
 		}
 
+		/*
+		 * Load Model
+		 */
 		final Model model = new Model( project.getSpaceUnits(), project.getTimeUnits() );
+		final boolean isNewProject = project.getProjectRoot() == null;
+		if ( !isNewProject )
+		{
+			try (final MamutProject.ProjectReader reader = project.openForReading())
+			{
+				final FileIdToGraphMap< Spot, Link > idmap = model.loadRaw( reader );
+				// Load features.
+				MamutRawFeatureModelIO.deserialize(
+						windowManager.getContext(),
+						model,
+						idmap,
+						reader );
+			}
+			catch ( final ClassNotFoundException e )
+			{
+				e.printStackTrace();
+			}
+		}
 
 		/*
 		 * Reset window manager.
@@ -321,29 +342,6 @@ public class ProjectManager
 				globalAppActions );
 
 		windowManager.setAppModel( appModel );
-
-		/*
-		 * Deserialize Model.
-		 */
-		final boolean isNewProject = project.getProjectRoot() == null;
-		if ( !isNewProject )
-		{
-			try (final MamutProject.ProjectReader reader = project.openForReading())
-			{
-				final FileIdToGraphMap< Spot, Link > idmap = model.loadRaw( reader );
-				// Load features.
-				MamutRawFeatureModelIO.deserialize(
-						windowManager.getContext(),
-						model,
-						idmap,
-						reader );
-			}
-			catch ( final ClassNotFoundException e )
-			{
-				e.printStackTrace();
-			}
-		}
-
 		this.project = project;
 		updateEnabledActions();
 	}
