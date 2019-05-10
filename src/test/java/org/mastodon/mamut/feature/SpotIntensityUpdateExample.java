@@ -51,7 +51,7 @@ public class SpotIntensityUpdateExample
 		final Map< FeatureSpec< ?, ? >, Feature< ? > > features = featureComputerService.compute(
 				SpotGaussFilteredIntensityFeature.SPEC );
 		stopWatch.stop();
-		System.out.println( String.format( "Done in %.1s.", stopWatch.nanoTime() / 1e9 ) );
+		System.out.println( String.format( "Done in %.2f s.", stopWatch.nanoTime() / 1e9 ) );
 
 		/*
 		 * 1.1b. Pass them to the feature model.
