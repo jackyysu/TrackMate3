@@ -37,16 +37,14 @@ public class LinkUpdateStack extends UpdateStack< Link >
 
 	public static LinkUpdateStack getOrCreate( final FeatureModel featureModel, final RefCollection< Link > pool )
 	{
-		final LinkUpdateStack feature = new LinkUpdateStack( pool );
-		final LinkUpdateStack retrieved = ( LinkUpdateStack ) featureModel.getFeature( feature.getSpec() );
-		if ( null == retrieved )
-		{
-			featureModel.declareFeature( feature );
-			return feature;
-		}
-		return retrieved;
-	}
+		final LinkUpdateStack retrieved = ( LinkUpdateStack ) featureModel.getFeature( LinkUpdateStack.SPEC );
+		if ( null != retrieved )
+			return retrieved;
 
+		final LinkUpdateStack feature = new LinkUpdateStack( pool );
+		featureModel.declareFeature( feature );
+		return feature;
+	}
 
 	@Override
 	public FeatureSpec< LinkUpdateStack, Link > getSpec()

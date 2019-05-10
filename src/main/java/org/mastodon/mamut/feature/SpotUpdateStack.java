@@ -37,14 +37,13 @@ public class SpotUpdateStack extends UpdateStack< Spot >
 
 	public static SpotUpdateStack getOrCreate( final FeatureModel featureModel, final RefCollection< Spot > pool )
 	{
+		final SpotUpdateStack retrieved = ( SpotUpdateStack ) featureModel.getFeature( SpotUpdateStack.SPEC );
+		if ( null != retrieved )
+			return retrieved;
+
 		final SpotUpdateStack feature = new SpotUpdateStack( pool );
-		final SpotUpdateStack retrieved = ( SpotUpdateStack ) featureModel.getFeature( feature.getSpec() );
-		if ( null == retrieved )
-		{
-			featureModel.declareFeature( feature );
-			return feature;
-		}
-		return retrieved;
+		featureModel.declareFeature( feature );
+		return feature;
 	}
 
 	@Override
